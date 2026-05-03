@@ -49,6 +49,6 @@ python3 -m http.server 8765
 
 ## Contact
 
-- **Email:** anup0022@mail.com
+- **Email:** anup0022@gmail.com
 - **LinkedIn:** [linkedin.com/in/00anup-singh](https://www.linkedin.com/in/00anup-singh/)
 - **GitHub:** [github.com/anup0022](https://github.com/anup0022)
