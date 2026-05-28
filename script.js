@@ -4,12 +4,21 @@ window.addEventListener('load', () => {
         document.getElementById('pageLoader').classList.add('hidden');
     }, 600);
 });
+// Failsafe: remove loader after 3s even if load event is slow
+setTimeout(() => {
+    const loader = document.getElementById('pageLoader');
+    if (loader && !loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+    }
+}, 3000);
 
 // ========== PARTICLES BACKGROUND ==========
 const canvas = document.getElementById('particles-canvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
 let mouse = { x: null, y: null };
+let animationId = null;
+const isMobile = window.innerWidth < 768;
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -58,7 +67,8 @@ class Particle {
 }
 
 function initParticles() {
-    const count = Math.min(80, Math.floor(window.innerWidth / 15));
+    // Fewer particles on mobile for better performance
+    const count = isMobile ? 20 : Math.min(50, Math.floor(window.innerWidth / 25));
     particles = [];
     for (let i = 0; i < count; i++) {
         particles.push(new Particle());
@@ -67,13 +77,16 @@ function initParticles() {
 initParticles();
 
 function connectParticles() {
+    const maxDist = 150;
     for (let a = 0; a < particles.length; a++) {
         for (let b = a + 1; b < particles.length; b++) {
             const dx = particles[a].x - particles[b].x;
             const dy = particles[a].y - particles[b].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 150) {
-                const opacity = (1 - dist / 150) * 0.15;
+            // Skip sqrt for performance - compare squared distances
+            const distSq = dx * dx + dy * dy;
+            if (distSq < maxDist * maxDist) {
+                const dist = Math.sqrt(distSq);
+                const opacity = (1 - dist / maxDist) * 0.15;
                 ctx.strokeStyle = `rgba(0, 212, 255, ${opacity})`;
                 ctx.lineWidth = 0.5;
                 ctx.beginPath();
@@ -88,10 +101,26 @@ function connectParticles() {
 function animateParticles() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach(p => { p.update(); p.draw(); });
-    connectParticles();
-    requestAnimationFrame(animateParticles);
+    if (!isMobile) connectParticles(); // Skip line drawing on mobile
+    animationId = requestAnimationFrame(animateParticles);
 }
-animateParticles();
+
+// Only start animation if user hasn't indicated reduced motion preference
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    animateParticles();
+} else {
+    // Draw static particles once
+    particles.forEach(p => p.draw());
+}
+
+// Pause animation when tab is not visible (saves CPU)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        cancelAnimationFrame(animationId);
+    } else if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        animateParticles();
+    }
+});
 
 document.addEventListener('mousemove', (e) => {
     mouse.x = e.clientX;
@@ -133,6 +162,15 @@ function closeNav() {
     document.getElementById('navLinks').classList.remove('open');
     document.getElementById('navToggle').classList.remove('active');
 }
+
+// Close mobile nav when clicking outside
+document.addEventListener('click', function(e) {
+    const navLinks = document.getElementById('navLinks');
+    const navToggle = document.getElementById('navToggle');
+    if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !navToggle.contains(e.target)) {
+        closeNav();
+    }
+});
 
 // ========== TYPED TEXT EFFECT ==========
 const titles = [

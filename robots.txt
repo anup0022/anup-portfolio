@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /Anup_Singh.docx
 
+# Sitemap
 Sitemap: https://www.anup-singh.in/sitemap.xml
+
+# Host
+Host: https://www.anup-singh.in
